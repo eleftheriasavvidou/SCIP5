@@ -14,29 +14,31 @@ def train_multivariate_linear_regressor(df):
     features = df.drop(["NOX"], axis=1).to_numpy()
     nox = df["NOX"].to_numpy()
 
+    # z-score normalisation
+    features = (features - np.mean(features, axis=0)) / np.std(features, axis=0)
+
     lr = LinearRegression()
     return lr.fit(features, nox)
 
 
-def apply_multivariate_linear_regressor(mlr, test_df):
-    test_features = test_df.drop(["NOX"], axis=1).to_numpy()
-    test_nox = test_df["NOX"].to_numpy()
-
-    # Predict nox value for each testcase
-    prediction = mlr.predict(test_features)
+def apply_multivariate_linear_regressor(mlr, df):
+    features = df.drop(["NOX"], axis=1).to_numpy()
+    nox = df["NOX"].to_numpy()
 
     # z-score normalisation
-    test_nox = (test_nox - np.mean(test_nox)) / np.std(test_nox)
-    prediction = (prediction - np.mean(prediction)) / np.std(prediction)
+    features = (features - np.mean(features, axis=0)) / np.std(features, axis=0)
+
+    # Predict nox value for each testcase
+    prediction = mlr.predict(features)
 
     # Spearman Rank Correlation
-    sc, _ = spearmanr(test_nox, prediction)
+    sc, _ = spearmanr(nox, prediction)
 
     # Mean Absolute Error
-    mae = sum(abs(prediction - test_nox)) / len(prediction)
+    mae = sum(abs(prediction - nox)) / len(prediction)
 
     # R^2
-    r2 = r2_score(test_nox, prediction)
+    r2 = r2_score(nox, prediction)
 
     return (sc, mae, r2)
 
@@ -70,7 +72,6 @@ def main():
     d2013 = make_dataframe("pp_gas_emission/gt_2013.csv").drop(["CO"], axis=1)
     d2014 = make_dataframe("pp_gas_emission/gt_2014.csv").drop(["CO"], axis=1)
     d2015 = make_dataframe("pp_gas_emission/gt_2015.csv").drop(["CO"], axis=1)
-
 
     ###########################################################################
 
@@ -133,7 +134,7 @@ def main():
     print(new_validation_set_baseline)
 
     # Method to plot feature columns
-    plot_feature(new_training_set, "TEY")
+    #plot_feature(new_training_set, "TEY")
 
 if __name__ == "__main__":
     main()
