@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+from scipy.stats import spearmanr
 
 
 def make_dataframe(path):
@@ -23,12 +25,23 @@ def apply_multivariate_linear_regressor(mlr, test_df):
     # Predict nox value for each testcase
     prediction = mlr.predict(test_features)
 
-    # TODO: Compare NOX prediction values with actual NOX test values
+    # z-score normalisation
+    test_nox = (test_nox - np.mean(test_nox)) / np.std(test_nox)
+    prediction = (prediction - np.mean(prediction)) / np.std(prediction)
 
-    return "TODO"
+    # Spearman Rank Correlation
+    sc, _ = spearmanr(test_nox, prediction)
+
+    # Mean Absolute Error
+    mae = sum(abs(prediction - test_nox)) / len(prediction)
+
+    # R^2
+    r2 = r2_score(test_nox, prediction)
+
+    return (sc, mae, r2)
 
 
-def phase_1():
+def main():
 
     # Read data from csv
     d2011 = make_dataframe("pp_gas_emission/gt_2011.csv").drop(["CO"], axis=1)
@@ -37,36 +50,8 @@ def phase_1():
     d2014 = make_dataframe("pp_gas_emission/gt_2014.csv").drop(["CO"], axis=1)
     d2015 = make_dataframe("pp_gas_emission/gt_2015.csv").drop(["CO"], axis=1)
 
-    # Training set -> 2011 + 2012
-    training_set = pd.concat([d2011, d2012])
 
-    # Validation set -> 2013
-    validation_set = d2013
-
-    # Test set -> 2014 + 2015
-    test_set = pd.concat([d2014, d2015])
-
-    # phase 1a:
-
-    # train mlr on training_set
-    mlr = train_multivariate_linear_regressor(training_set)
-
-    # apply mlr on validation set
-    baseline = apply_multivariate_linear_regressor(mlr, validation_set)
-
-    # Combine training and validation set
-    train_valid_set = pd.concat([training_set, validation_set])
-
-    # train mlr on combined training and validation set
-    new_mlr = train_multivariate_linear_regressor(train_valid_set)
-
-    # apply new mlr on test set
-    #new_baseline = apply_multivariate_linear_regressor(new_mlr, test_set)
-
-    return
-
-
-if __name__ == "__main__":
+    ###########################################################################
 
     # Phase 1a:
     # - Using the training set and the original setof features, (Section 4.1)
@@ -79,4 +64,40 @@ if __name__ == "__main__":
     # - Note down the validation and the test set performances 
     #       for reporting later (e.g.in comparison with other experiments)
 
-    phase_1()
+    ###########################################################################
+
+
+    # Training set -> 2011 + 2012
+    training_set = pd.concat([d2011, d2012])
+
+    # Validation set -> 2013
+    validation_set = d2013
+
+    # Test set -> 2014 + 2015
+    test_set = pd.concat([d2014, d2015])
+
+    # train mlr on training_set
+    mlr = train_multivariate_linear_regressor(training_set)
+
+    # apply mlr on validation set
+    validation_set_baseline = apply_multivariate_linear_regressor(mlr, validation_set)
+    print(validation_set_baseline)
+
+    # Combine training and validation set
+    train_valid_set = pd.concat([training_set, validation_set])
+
+    # train mlr on combined training and validation set
+    new_mlr = train_multivariate_linear_regressor(train_valid_set)
+
+    # apply new mlr on test set
+    test_set_baseline = apply_multivariate_linear_regressor(new_mlr, test_set)
+
+    ###########################################################################
+
+    # Phase 2:
+
+    ###########################################################################
+
+
+if __name__ == "__main__":
+    main()
