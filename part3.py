@@ -41,6 +41,27 @@ def apply_multivariate_linear_regressor(mlr, test_df):
     return (sc, mae, r2)
 
 
+def plot_feature(df, feature_name):
+
+    feature = df[feature_name].to_numpy()
+    nox = df["NOX"].to_numpy()
+
+    fig, ax = plt.subplots()
+
+    ax.scatter(feature, nox, color="blue")
+
+    ax.set_xlim(np.min(feature) - 10, np.max(feature) + 10)
+    ax.set_ylim(np.min(nox) -10, np.max(nox) + 10)
+    ax.set_aspect(1)
+
+    ax.set_title("The relation between " + feature_name + " and result NOx")
+    ax.set_xlabel(feature_name)
+    ax.set_ylabel("NOx")
+
+    plt.show()
+    return 
+
+
 def main():
 
     # Read data from csv
@@ -81,23 +102,38 @@ def main():
 
     # apply mlr on validation set
     validation_set_baseline = apply_multivariate_linear_regressor(mlr, validation_set)
-    print(validation_set_baseline)
 
     # Combine training and validation set
     train_valid_set = pd.concat([training_set, validation_set])
 
     # train mlr on combined training and validation set
-    new_mlr = train_multivariate_linear_regressor(train_valid_set)
+    mlr2 = train_multivariate_linear_regressor(train_valid_set)
 
     # apply new mlr on test set
-    test_set_baseline = apply_multivariate_linear_regressor(new_mlr, test_set)
+    test_set_baseline = apply_multivariate_linear_regressor(mlr2, test_set)
 
     ###########################################################################
 
     # Phase 2:
+    # - Create new features, e.g. PCA, multiplicate, log, devide, combine features
+    #       - at any point, probe validation set performance of our set of features (5 times max)
+    # - Provide model based explainations via visualising feature weights
+    # - Pick two random instances from the test set and provide instance level explainations of them
 
     ###########################################################################
 
+    new_training_set = training_set # TODO: add or remove feature columns
+    new_validation_set = validation_set # TODO: add or remove feature columns like above
+
+    # probe validation set performance of our set of features
+    new_mlr = train_multivariate_linear_regressor(new_training_set)
+    new_validation_set_baseline = apply_multivariate_linear_regressor(new_mlr, new_validation_set)
+
+    print(validation_set_baseline)
+    print(new_validation_set_baseline)
+
+    # Method to plot feature columns
+    plot_feature(new_training_set, "TEY")
 
 if __name__ == "__main__":
     main()
