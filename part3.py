@@ -48,12 +48,19 @@ def plot_feature(df, feature_name):
     feature = df[feature_name].to_numpy()
     nox = df["NOX"].to_numpy()
 
+    # Add n-th order polynomial
+    poly = np.poly1d(np.polyfit(feature, nox, 2))
+    new_x = np.linspace(np.min(feature), np.max(feature))
+    new_y = poly(new_x)
+    
+
     fig, ax = plt.subplots()
 
     ax.scatter(feature, nox, color="blue")
+    plt.plot(new_x, new_y, color='red')
 
-    ax.set_xlim(np.min(feature) - 10, np.max(feature) + 10)
-    ax.set_ylim(np.min(nox) -10, np.max(nox) + 10)
+    ax.set_xlim(np.min(feature) - 1, np.max(feature) + 1)
+    ax.set_ylim(np.min(nox) -1, np.max(nox) + 1)
     ax.set_aspect(1)
 
     ax.set_title("The relation between " + feature_name + " and result NOx")
@@ -63,6 +70,21 @@ def plot_feature(df, feature_name):
     plt.show()
     return 
 
+
+def add_squared_feature_column(old_df, feature_name):
+    df = old_df.copy()
+    df["squared_" + feature_name] = [e**2 for e in df[feature_name]]
+    return df
+
+
+def change_features(old_df):
+    df = old_df.copy()
+    df = add_squared_feature_column(df, "AT")
+    df = add_squared_feature_column(df, "AH")
+
+    # df = add_squared_feature_column(df, "CDP")
+    # df = add_squared_feature_column(df, "TEY")
+    return df
 
 def main():
 
@@ -123,18 +145,41 @@ def main():
 
     ###########################################################################
 
-    new_training_set = training_set # TODO: add or remove feature columns
-    new_validation_set = validation_set # TODO: add or remove feature columns like above
+    new_training_set = change_features(training_set)
+    new_validation_set = change_features(validation_set)
+
 
     # probe validation set performance of our set of features
     new_mlr = train_multivariate_linear_regressor(new_training_set)
     new_validation_set_baseline = apply_multivariate_linear_regressor(new_mlr, new_validation_set)
 
+
+    feature_names = new_training_set.columns.values
+    feature_names = np.append(feature_names[:9], feature_names[10:len(feature_names) + 1])
+
+    print(feature_names)
+
+    # summarize feature importance
+    importance = new_mlr.coef_
+    for i,v in enumerate(importance):
+        print('Feature: ' + str(feature_names[i]) + ', Score: ' + str(v))
+
+    # plot feature importance4
+    fig, ax = plt.subplots()
+    ax.bar([x for x in range(len(importance))], importance)
+
+    ax.set_xticks([x for x in range(len(importance))])
+    ax.set_xticklabels(feature_names)
+    plt.show()
+
     print(validation_set_baseline)
     print(new_validation_set_baseline)
 
     # Method to plot feature columns
+    #plot_feature(new_training_set, "CDP")
+    #plot_feature(new_training_set, "squared_CDP")
     #plot_feature(new_training_set, "TEY")
+    #plot_feature(new_training_set, "AT")
 
 if __name__ == "__main__":
     main()
