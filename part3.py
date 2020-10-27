@@ -10,6 +10,14 @@ def make_dataframe(path):
     return pd.read_csv(path)
 
 
+def split_dataframe(df, n):
+    return np.array_split(df, n)
+
+
+def add_dataframe(df, addition):
+    return pd.concat([df, addition])
+
+
 def train_multivariate_linear_regressor(df):
     features = df.drop(["NOX"], axis=1).to_numpy()
     nox = df["NOX"].to_numpy()
@@ -71,6 +79,23 @@ def plot_feature(df, feature_name):
     return
 
 
+def plot_feature_weights(mlr, feature_names):
+
+    # summarize feature importance
+    importance = mlr.coef_
+    for i,v in enumerate(importance):
+        print('Feature: ' + str(feature_names[i]) + ', Score: ' + str(v))
+
+    # plot feature importance4
+    fig, ax = plt.subplots()
+    ax.bar([x for x in range(len(importance))], importance)
+
+    ax.set_xticks([x for x in range(len(importance))])
+    ax.set_xticklabels(feature_names)
+
+    plt.show()
+
+
 def add_average(old_df, feature_name_1, feature_name_2):
     df = old_df.copy()
     feature1 = df[feature_name_1].array
@@ -115,6 +140,65 @@ def change_features(old_df):
 
     return df
 
+
+def simulate_online_learning(old_training_set, simulation_set, iterations):
+    training_set = old_training_set.copy()
+    simulation_blocks = split_dataframe(simulation_set, iterations)
+
+    baselines = []
+    for i in range(iterations):
+
+        block = simulation_blocks[i]
+
+        # Train model for current training set
+        mlr = train_multivariate_linear_regressor(training_set)
+
+        # Compute performance of training set on current block
+        baselines.append(apply_multivariate_linear_regressor(mlr, block))
+
+        # Add block to training set
+        training_set = add_dataframe(training_set, block)
+
+    return np.array(baselines)
+
+
+def compare_block_wise_perfomance(original_baseline, new_baseline, original_block_wise_performance,
+                                                                        new_block_wise_performance):
+
+    original_baseline = np.array(original_baseline)
+    new_baseline = np.array(new_baseline)
+
+    # step 1 - 3
+
+    print("\nBlockwise performance difference (original features):")
+    print(original_block_wise_performance)
+
+    print("\nBlockwise performance difference (generated features):")
+    print(new_block_wise_performance)
+
+    block_wise_performance_difference = new_block_wise_performance - original_block_wise_performance
+
+    print("\nBlockwise performance difference (generated features - original features):")
+    print(block_wise_performance_difference)
+
+    print("\nAverage blockwise performance difference (generated features - original features):")
+    print(np.mean(block_wise_performance_difference, axis=0))
+
+    # Step 5
+
+    print("\nOriginal baseline (original features):")
+    print(original_baseline)
+
+    print("\nOriginal baseline (generated features):")
+    print(new_baseline)
+
+    print("\nOnline Learning simulation average performance (original features):")
+    print(np.mean(original_block_wise_performance, axis=0))
+
+    print("\nOnline Learning simulation average performance (generated features):")
+    print(np.mean(new_block_wise_performance, axis=0))
+
+
 def main():
 
     # Read data from csv
@@ -141,13 +225,13 @@ def main():
 
 
     # Training set -> 2011 + 2012
-    training_set = pd.concat([d2011, d2012])
+    training_set = add_dataframe(d2011, d2012)
 
     # Validation set -> 2013
     validation_set = d2013
 
     # Test set -> 2014 + 2015
-    test_set = pd.concat([d2014, d2015])
+    test_set = add_dataframe(d2014, d2015)
 
     # train mlr on training_set
     mlr = train_multivariate_linear_regressor(training_set)
@@ -176,39 +260,83 @@ def main():
 
     new_training_set = change_features(training_set)
     new_validation_set = change_features(validation_set)
+    new_train_valid_set = change_features(train_valid_set)
+    new_test_set = change_features(test_set)
 
 
     # probe validation set performance of our set of features
-    new_mlr = train_multivariate_linear_regressor(new_training_set)
-    new_validation_set_baseline = apply_multivariate_linear_regressor(new_mlr, new_validation_set)
+    new_vaidation_mlr = train_multivariate_linear_regressor(new_training_set)
+    new_validation_set_baseline = apply_multivariate_linear_regressor(new_vaidation_mlr, new_validation_set)
+
+    # probe validation set performance of our set of features
+    new_test_mlr = train_multivariate_linear_regressor(new_train_valid_set)
+    new_test_set_baseline = apply_multivariate_linear_regressor(new_test_mlr, new_test_set)
 
 
     feature_names = new_training_set.columns.values
     feature_names = np.append(feature_names[:9], feature_names[10:len(feature_names) + 1])
 
-    print(feature_names)
+    #print(validation_set_baseline)
+    #print(new_validation_set_baseline)
 
-    # summarize feature importance
-    importance = new_mlr.coef_
-    for i,v in enumerate(importance):
-        print('Feature: ' + str(feature_names[i]) + ', Score: ' + str(v))
-
-    # plot feature importance4
-    fig, ax = plt.subplots()
-    ax.bar([x for x in range(len(importance))], importance)
-
-    ax.set_xticks([x for x in range(len(importance))])
-    ax.set_xticklabels(feature_names)
-    plt.show()
-
-    print(validation_set_baseline)
-    print(new_validation_set_baseline)
+    # Method to display feature weights
+    #plot_feature_weights(new_mlr, feature_names)
 
     # Method to plot feature columns
     #plot_feature(new_training_set, "CDP")
     #plot_feature(new_training_set, "squared_CDP")
     #plot_feature(new_training_set, "TEY")
     #plot_feature(new_training_set, "AT")
+
+    ###########################################################################
+
+    # Phase 3:
+    # - Online learning experiment 1:
+    #        - Split validation set in 10 equal blocks
+    #        - Split test set into 20 equal sized blocks
+    #        - For validation set:
+    #            - Iterativelly add blocks of data to training set
+    #                  - Starting with training set (2011 + 2012)
+    #                  - Keep track of scoring
+    #            - Compare score to baseline score (the baseline without online learning)
+    #        - For test set:
+    #            - Same as validation set
+    # - Online learning experiment 2:
+    #        - Same experiment but then use generated features
+
+    ###########################################################################
+
+
+    print("\n###############################################################")
+    print("################# validation set performances #################")
+    print("###############################################################\n")
+
+
+    # Step 1 - 5: Original features
+    online_validation_baselines = simulate_online_learning(training_set, validation_set, 10)
+
+    # Step 1 - 5: Generated features
+    new_online_validation_baselines = simulate_online_learning(new_training_set, new_validation_set, 10)
+
+    # Display performance comparison between original and online learning simulation baselines on the validation set
+    compare_block_wise_perfomance(validation_set_baseline, new_validation_set_baseline, 
+                                    online_validation_baselines, new_online_validation_baselines)
+
+
+    print("\n###############################################################")
+    print("#################### test set performances ####################")
+    print("###############################################################\n")
+
+
+    # Step 6: Original features
+    online_test_baselines = simulate_online_learning(train_valid_set, test_set, 20)
+
+    # Step 6 : Generated features
+    new_online_test_baselines = simulate_online_learning(new_train_valid_set, new_test_set, 20)
+
+    # Display performance comparison between original and online learning simulation baselines on the test set
+    compare_block_wise_perfomance(test_set_baseline, new_test_set_baseline, 
+                                    online_test_baselines, new_online_test_baselines)
 
 if __name__ == "__main__":
     main()
