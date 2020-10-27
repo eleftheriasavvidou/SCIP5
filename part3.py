@@ -44,6 +44,7 @@ def create_table(data, table_name):
 
     fig.tight_layout()
 
+    plt.show()
     plt.savefig(table_name)
 
 
@@ -203,6 +204,7 @@ def compare_block_wise_perfomance(original_baseline, new_baseline, original_bloc
     create_table(new_block_wise_performance, "Blockwise performance difference (generated features)")
 
     block_wise_performance_difference = new_block_wise_performance - original_block_wise_performance
+    create_table(block_wise_performance_difference, "Blockwise performance difference original generated")
 
     print("\nBlockwise performance difference (generated features - original features):")
     print(block_wise_performance_difference)
