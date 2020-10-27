@@ -196,7 +196,7 @@ def compare_block_wise_perfomance(original_baseline, new_baseline, original_bloc
 
     print("\nBlockwise performance difference (original features):")
     print(original_block_wise_performance)
-    create_table(original_block_wise_performance, "Blockwise performance difference (original features)")
+    create_table(new_block_wise_performance, "Blockwise performance difference (original features)")
 
     print("\nBlockwise performance difference (generated features):")
     print(new_block_wise_performance)
@@ -206,7 +206,6 @@ def compare_block_wise_perfomance(original_baseline, new_baseline, original_bloc
 
     print("\nBlockwise performance difference (generated features - original features):")
     print(block_wise_performance_difference)
-    create_table(new_block_wise_performance, "Blockwise performance difference (generated features - original features):")
 
     print("\nAverage blockwise performance difference (generated features - original features):")
     print(np.mean(block_wise_performance_difference, axis=0))
