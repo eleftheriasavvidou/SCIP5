@@ -68,7 +68,31 @@ def plot_feature(df, feature_name):
     ax.set_ylabel("NOx")
 
     plt.show()
-    return 
+    return
+
+
+def add_average(old_df, feature_name_1, feature_name_2):
+    df = old_df.copy()
+    feature1 = df[feature_name_1].array
+    feature2 = df[feature_name_2].array
+
+    i = 0
+    x = []
+
+    while i < len(feature1):
+        value = feature1[i] + feature2[i] / 2
+        x.append(value)
+        i += 1
+
+    df["average" + feature_name_1 + feature_name_2] = x
+
+    return df
+
+
+def add_log_feature_column(old_df, feature_name):
+    df = old_df.copy()
+    df["squared_" + feature_name] = [np.log(e) for e in df[feature_name]]
+    return df
 
 
 def add_squared_feature_column(old_df, feature_name):
@@ -77,13 +101,18 @@ def add_squared_feature_column(old_df, feature_name):
     return df
 
 
+def add_squareroot_feature_column(old_df, feature_name):
+    df = old_df.copy()
+    df["squared_" + feature_name] = [np.sqrt(e) for e in df[feature_name]]
+    return df
+
+
 def change_features(old_df):
     df = old_df.copy()
-    df = add_squared_feature_column(df, "AT")
-    df = add_squared_feature_column(df, "AH")
+    df = add_log_feature_column(df, "CDP")
+    df = add_log_feature_column(df, "TEY")
+    df = add_log_feature_column(df, "TIT")
 
-    # df = add_squared_feature_column(df, "CDP")
-    # df = add_squared_feature_column(df, "TEY")
     return df
 
 def main():
