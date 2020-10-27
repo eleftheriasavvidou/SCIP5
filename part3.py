@@ -29,7 +29,7 @@ def train_multivariate_linear_regressor(df):
     return lr.fit(features, nox)
 
 
-def create_table(data):
+def create_table(data, table_name):
     fig, ax = plt.subplots()
 
     # hide axes
@@ -37,10 +37,10 @@ def create_table(data):
     ax.axis('off')
     ax.axis('tight')
 
-    labels = []
     df = pd.DataFrame(data, columns=list('SAR'))
 
     ax.table(cellText=df.values, colLabels=df.columns, loc='center')
+    plt.title(table_name)
 
     fig.tight_layout()
 
@@ -159,7 +159,7 @@ def change_features(old_df):
     return df
 
 
-def simulate_online_learning(old_training_set, simulation_set, iterations):
+def simulate_online_learning(old_training_set, simulation_set, iterations, name):
     training_set = old_training_set.copy()
     simulation_blocks = split_dataframe(simulation_set, iterations)
     tableData = []
@@ -180,7 +180,7 @@ def simulate_online_learning(old_training_set, simulation_set, iterations):
         # Add block to training set
         training_set = add_dataframe(training_set, block)
 
-    create_table(tableData)
+    create_table(tableData, name)
 
     return np.array(baselines)
 
@@ -336,10 +336,10 @@ def main():
 
 
     # Step 1 - 5: Original features
-    online_validation_baselines = simulate_online_learning(training_set, validation_set, 10)
+    online_validation_baselines = simulate_online_learning(training_set, validation_set, 10, "Original features")
 
     # Step 1 - 5: Generated features
-    new_online_validation_baselines = simulate_online_learning(new_training_set, new_validation_set, 10)
+    new_online_validation_baselines = simulate_online_learning(new_training_set, new_validation_set, 10, "Generated features")
 
     # Display performance comparison between original and online learning simulation baselines on the validation set
     compare_block_wise_perfomance(validation_set_baseline, new_validation_set_baseline, 
@@ -352,10 +352,10 @@ def main():
 
 
     # Step 6: Original features
-    online_test_baselines = simulate_online_learning(train_valid_set, test_set, 20)
+    online_test_baselines = simulate_online_learning(train_valid_set, test_set, 20, "Original features")
 
     # Step 6 : Generated features
-    new_online_test_baselines = simulate_online_learning(new_train_valid_set, new_test_set, 20)
+    new_online_test_baselines = simulate_online_learning(new_train_valid_set, new_test_set, 20, "Generated features")
 
     # Display performance comparison between original and online learning simulation baselines on the test set
     compare_block_wise_perfomance(test_set_baseline, new_test_set_baseline, 
