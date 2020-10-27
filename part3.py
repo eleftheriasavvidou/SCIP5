@@ -29,6 +29,24 @@ def train_multivariate_linear_regressor(df):
     return lr.fit(features, nox)
 
 
+def create_table(data):
+    fig, ax = plt.subplots()
+
+    # hide axes
+    fig.patch.set_visible(False)
+    ax.axis('off')
+    ax.axis('tight')
+
+    labels = []
+    df = pd.DataFrame(data, columns=list('SAR'))
+
+    ax.table(cellText=df.values, colLabels=df.columns, loc='center')
+
+    fig.tight_layout()
+
+    plt.show()
+
+
 def apply_multivariate_linear_regressor(mlr, df):
     features = df.drop(["NOX"], axis=1).to_numpy()
     nox = df["NOX"].to_numpy()
@@ -144,6 +162,7 @@ def change_features(old_df):
 def simulate_online_learning(old_training_set, simulation_set, iterations):
     training_set = old_training_set.copy()
     simulation_blocks = split_dataframe(simulation_set, iterations)
+    tableData = []
 
     baselines = []
     for i in range(iterations):
@@ -154,10 +173,14 @@ def simulate_online_learning(old_training_set, simulation_set, iterations):
         mlr = train_multivariate_linear_regressor(training_set)
 
         # Compute performance of training set on current block
-        baselines.append(apply_multivariate_linear_regressor(mlr, block))
+        linear_regressor = apply_multivariate_linear_regressor(mlr, block)
+        tableData.append(linear_regressor)
+        baselines.append(linear_regressor)
 
         # Add block to training set
         training_set = add_dataframe(training_set, block)
+
+    create_table(tableData)
 
     return np.array(baselines)
 
