@@ -44,7 +44,8 @@ def create_table(data, table_name):
 
     fig.tight_layout()
 
-    plt.show()
+    plt.savefig(table_name)
+
 
 
 def apply_multivariate_linear_regressor(mlr, df):
@@ -195,14 +196,17 @@ def compare_block_wise_perfomance(original_baseline, new_baseline, original_bloc
 
     print("\nBlockwise performance difference (original features):")
     print(original_block_wise_performance)
+    create_table(original_block_wise_performance, "Blockwise performance difference (original features)")
 
     print("\nBlockwise performance difference (generated features):")
     print(new_block_wise_performance)
+    create_table(new_block_wise_performance, "Blockwise performance difference (generated features)")
 
     block_wise_performance_difference = new_block_wise_performance - original_block_wise_performance
 
     print("\nBlockwise performance difference (generated features - original features):")
     print(block_wise_performance_difference)
+    create_table(new_block_wise_performance, "Blockwise performance difference (generated features - original features):")
 
     print("\nAverage blockwise performance difference (generated features - original features):")
     print(np.mean(block_wise_performance_difference, axis=0))
@@ -352,10 +356,10 @@ def main():
 
 
     # Step 6: Original features
-    online_test_baselines = simulate_online_learning(train_valid_set, test_set, 20, "Original features")
+    online_test_baselines = simulate_online_learning(train_valid_set, test_set, 20, "Original features test set")
 
     # Step 6 : Generated features
-    new_online_test_baselines = simulate_online_learning(new_train_valid_set, new_test_set, 20, "Generated features")
+    new_online_test_baselines = simulate_online_learning(new_train_valid_set, new_test_set, 20, "Generated features test set")
 
     # Display performance comparison between original and online learning simulation baselines on the test set
     compare_block_wise_perfomance(test_set_baseline, new_test_set_baseline, 
